@@ -1,0 +1,90 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+repositories {
+    mavenCentral()
+    google()
+    maven { url "https://jitpack.io" }
+}
+
+group = 'com.github.TomaszKrolBA'
+def artefactId = 'OpenCVAndroidWrapper'
+version = '4.6.1beta1'
+
+
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+
+def openCVersionName = "4.6.0"
+def openCVersionCode = ((4 * 100 + 6) * 100 + 0) * 10 + 0
+
+println "OpenCV: " +openCVersionName + " " + project.buildscript.sourceFile
+
+android {
+    compileSdkVersion 33
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 33
+
+        versionCode openCVersionCode
+        versionName openCVersionName
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+                targets "opencv_jni_shared"
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            packagingOptions {
+                doNotStrip '**/*.so'  // controlled by OpenCV CMake scripts
+            }
+        }
+        release {
+            packagingOptions {
+                exclude "lib/x86/**"
+                exclude "lib/x86_64/**"
+                doNotStrip '**/*.so'  // controlled by OpenCV CMake scripts
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['native/libs']
+            java.srcDirs = ['java/src']
+            aidl.srcDirs = ['java/src']
+            res.srcDirs = ['java/res']
+            manifest.srcFile 'java/AndroidManifest.xml'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path (project.projectDir.toString() + '/libcxx_helper/CMakeLists.txt')
+        }
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                from components.release
+                groupId = group
+                artifactId = artefactId
+                version = '4.6.1beta1'
+            }
+        }
+    }
+}
+
